@@ -1,37 +1,26 @@
-
+// requires
 require("dotenv").config();
 var keys = require("./keys.js");
 var request = require("request");
 var fs = require("fs");
-
 var Spotify = require('node-spotify-api');
-var spotify = new Spotify(keys.spotify);
-
 var Twitter = require("twitter");
+
+// keys
+var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
+
+// other variables
 var userInput = process.argv[2];
+var textFile = "log.txt";
+var entry;
 
-
+// run my Tweet function if user enters "my-tweets"
 if (userInput === "my-tweets") {
-    console.log("ok");
-    var params = {screen_name: 'hecky64804231', count: 20};
-    client.get('statuses/user_timeline', params, function(error, body, response) {
-      if (!error) {
-          for(i = 0; i < body.length; i++) {
-        console.log(body[i].created_at);
-        console.log(body[i].text);
-        console.log("\n================\n");
-          }
-      }
-      else {
-          console.log(error);
-      }
-    });
+    myTweets();
 }
-    //This will show your last 20 tweets and when they were created at in your terminal/bash window.//
-    
-    
 
+// run spotifySong function if user enters "spotify-this-song"
 if (userInput === "spotify-this-song") {
     var song = process.argv[3];
 
@@ -45,37 +34,10 @@ if (userInput === "spotify-this-song") {
     else {
         song = "artist:Ace+of+Base&song:The+Sign"
     }
-
-    spotify.search({ type: 'track', query: song, limit: 1}, function(err, data) {
-        if ( err ) {
-            console.log('Error occurred: ' + err);
-            return;
-        }
-     var searchObject = data.tracks.items[0];
-       console.log("\n================\n");
-       console.log("Artist name: " + searchObject.artists[0].name);
-       console.log("\n================\n");
-       console.log("Song name: " + searchObject.name);
-       console.log("\n================\n");
-       console.log("Check out a preview here: " + searchObject.preview_url);
-       console.log("\n================\n");
-       console.log("from this album: " + searchObject.album.name)
-       console.log("\n================\n");
-    });
+    spotifySong(song);
 }
-//     // This will show the following information about the song in your terminal/bash window
-     
-// //      * Artist(s)
-     
-// //      * The song's name
-     
-// //      * A preview link of the song from Spotify
-     
-// //      * The album that the song is from
 
-// //    * If no song is provided then your program will default to "The Sign" by Ace of Base.//
-// }
-
+// run movieThis function if user enters "movie-this"
 if (userInput === "movie-this") {
     var movieName = process.argv[3];
     if (movieName) {
@@ -87,47 +49,150 @@ if (userInput === "movie-this") {
     else {
         movieName = "Mr+Nobody";
     }
-   
-
-var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
-console.log(queryUrl);
-
-request(queryUrl, function(error, response, body) {
-
-    // If the request is successful
-    if (!error && response.statusCode === 200) {
-        console.log("Title: " + JSON.parse(body).Title);
-        console.log("\n================\n");
-        console.log("Release Year: " + JSON.parse(body).Year);
-        console.log("\n================\n");
-        console.log("IMDB Rating of " + JSON.parse(body).imdbRating);
-        console.log("\n================\n");
-        console.log("Rotten Tomatoes rating of " + JSON.parse(body).Ratings[1].value);
-        console.log("\n================\n");
-        console.log("This was made in " + JSON.parse(body).Country);
-        console.log("\n================\n");
-        console.log("Available in " + JSON.parse(body).Language);
-        console.log("\n================\n");
-        console.log("Plot: " + JSON.parse(body).Plot);
-        console.log("\n================\n");
-        console.log("Starring: " + JSON.parse(body).Actors);
-        console.log("\n================\n");
-    }
-})
+    movieThis(movieName);
 }
-// if (userInput === "do-what-it-says") {
-//     fs.readFile("random.txt")
-//     // Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
+
+// run which ever function is listed in the random.txt file if user enters "do-what-it-says"
+if (userInput === "do-what-it-says") {
+    fs.readFile("random.txt", "utf8", function(err, data) {
+        if (err) {
+            return console.log(err);
+        }
+
+       var output = data.split(",");
+       if (output[0] = "spotify-this-song") {
+           var song = output[1];
+           spotifySong(song);
+       }
+       else if (output[0] = "my-tweets") {
+           myTweets();
+       }
+       else if (output[0] = "movie-this") {
+           var movieName = output[1];
+           movieThis(movieName);
+       }
+       
+    })
+}
+
+//displays 20 most recent tweets and calls append function to add it to log.txt
+function myTweets() {
+    entry = "my-tweets: "
+    append(entry);
+    var params = {screen_name: 'hecky64804231', count: 20};
+    client.get('statuses/user_timeline', params, function(error, body, response) {
+      if (!error) {
+          for(i = 0; i < body.length; i++) {
+        console.log(body[i].created_at);
+        entry = body[i].created_at;
+        append(entry);
+        console.log(body[i].text);
+        entry = body[i].text;
+        append(entry);
+        console.log("\n================\n");
+          }
+      }
+      else {
+          console.log(error);
+          entry = error;
+          append(entry);
+      }
+    });
+}
+  
+//displays song information and calls append function to add it to log.txt
+function spotifySong(song) {
+    entry = "spotify-this-song: ";
+    append(entry);
+    spotify.search({ type: 'track', query: song, limit: 1}, function(err, data) {
+        if ( err ) {
+            console.log('Error occurred: ' + err);
+            entry = error;
+            append(entry);
+            return;
+        }
+        var searchObject = data.tracks.items[0];
+        console.log("\n================\n");
+        console.log("Artist name: " + searchObject.artists[0].name);
+        entry = "Artist name: " + searchObject.artists[0].name;
+        append(entry);
+        console.log("\n================\n");
+        console.log("Song name: " + searchObject.name);
+        entry = "Song name: " + searchObject.name;
+        append(entry);
+        console.log("\n================\n");
+        console.log("Check out a preview here: " + searchObject.preview_url);
+        entry = "Check out a preview here: " + searchObject.preview_url;
+        append(entry);
+        console.log("\n================\n");
+        console.log("from this album: " + searchObject.album.name)
+        entry = "from this album: " + searchObject.album.name;
+        append(entry);
+        console.log("\n================\n");
+    });
+}
+
+//displays movie info and calls append function to add it to log.txt
+function movieThis(movieName) {
+    entry = "movie-this: ";
+    append(entry);
+    var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+
+    request(queryUrl, function(error, response, body) {
+
      
-//     //  * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
-     
-//     //  * Feel free to change the text in that document to test out the feature for other commands.
-// }
+        if (!error && response.statusCode === 200) {
+            console.log("Title: " + JSON.parse(body).Title);
+            entry = "Title: " + JSON.parse(body).Title;
+            append(entry);
+            console.log("\n================\n");
+            console.log("Release Year: " + JSON.parse(body).Year);
+            entry = "Release Year: " + JSON.parse(body).Year;
+            append(entry);
+            console.log("\n================\n");
+            console.log("IMDB Rating of " + JSON.parse(body).imdbRating);
+            entry = "IMDB Rating of " + JSON.parse(body).imdbRating;
+            append(entry);
+            console.log("\n================\n");
+            if (JSON.parse(body).Ratings[1].value){
+                console.log("Rotten Tomatoes rating of " + JSON.parse(body).Ratings[1].value);
+                entry = "Rotten Tomatoes rating of " + JSON.parse(body).Ratings[1].value;
+                append(entry);
+            }
+            else {
+                console.log("Rotten Tomatoes rating: not rated");
+                entry = "Rotten Tomatoes rating: not rated";
+                append(entry);
+            }
+            console.log("\n================\n");
+            console.log("This was made in " + JSON.parse(body).Country);
+            entry = "This was made in " + JSON.parse(body).Country;
+            append(entry);
+            console.log("\n================\n");
+            console.log("Available in " + JSON.parse(body).Language);
+            entry = "Available in " + JSON.parse(body).Language;
+            append(entry);
+            console.log("\n================\n");
+            console.log("Plot: " + JSON.parse(body).Plot);
+            entry = "Plot: " + JSON.parse(body).Plot;
+            append(entry);
+            console.log("\n================\n");
+            console.log("Starring: " + JSON.parse(body).Actors);
+            entry = "Starring: " + JSON.parse(body).Actors;
+            append(entry);
+            console.log("\n================\n");
+        }
+    })
+}
 
-// // ### BONUS
+// function for adding stuff to the log.txt
+function append(entry) {
+    fs.appendFile(textFile, entry, function(err) {
 
-// // * In addition to logging the data to your terminal/bash window, output the data to a .txt file called `log.txt`.
-
-// // * Make sure you append each command you run to the `log.txt` file. 
-
-// // * Do not overwrite your file each time you run a command.
+        // If an error was experienced we say it.
+        if (err) {
+          console.log(err);
+        }
+ 
+    });
+}
