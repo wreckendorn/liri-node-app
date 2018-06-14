@@ -2,14 +2,15 @@
 require("dotenv").config();
 var keys = require("./keys.js");
 var request = require("request");
+var fs = require("fs");
 
-var spotify = require("spotify");
-var client2 = new Spotify(keys.spotify);
+var Spotify = require('node-spotify-api');
+var spotify = new Spotify(keys.spotify);
 
 var Twitter = require("twitter");
 var client = new Twitter(keys.twitter);
 var userInput = process.argv[2];
-var song = process.argv[3];
+
 
 if (userInput === "my-tweets") {
     console.log("ok");
@@ -32,16 +33,36 @@ if (userInput === "my-tweets") {
     
 
 if (userInput === "spotify-this-song") {
+    var song = process.argv[3];
 
-    client2.search({ type: 'track', query: song}, function(err, data) {
+    if (song) {
+        var songArr = process.argv;
+
+        for (var i = 4; i < songArr.length; i++) {
+            song += "+" + songArr[i]; 
+        }
+    }
+    else {
+        song = "artist:Ace+of+Base&song:The+Sign"
+    }
+
+    spotify.search({ type: 'track', query: song, limit: 1}, function(err, data) {
         if ( err ) {
             console.log('Error occurred: ' + err);
             return;
         }
-     
-       console.log(data);
+     var searchObject = data.tracks.items[0];
+       console.log("\n================\n");
+       console.log("Artist name: " + searchObject.artists[0].name);
+       console.log("\n================\n");
+       console.log("Song name: " + searchObject.name);
+       console.log("\n================\n");
+       console.log("Check out a preview here: " + searchObject.preview_url);
+       console.log("\n================\n");
+       console.log("from this album: " + searchObject.album.name)
+       console.log("\n================\n");
     });
-};
+}
 //     // This will show the following information about the song in your terminal/bash window
      
 // //      * Artist(s)
@@ -81,7 +102,7 @@ request(queryUrl, function(error, response, body) {
         console.log("\n================\n");
         console.log("IMDB Rating of " + JSON.parse(body).imdbRating);
         console.log("\n================\n");
-        console.log("Rotten Tomatoes rating of " + JSON.parse(body).Ratings[1].Value);
+        console.log("Rotten Tomatoes rating of " + JSON.parse(body).Ratings[1].value);
         console.log("\n================\n");
         console.log("This was made in " + JSON.parse(body).Country);
         console.log("\n================\n");
@@ -95,6 +116,7 @@ request(queryUrl, function(error, response, body) {
 })
 }
 // if (userInput === "do-what-it-says") {
+//     fs.readFile("random.txt")
 //     // Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
      
 //     //  * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
